@@ -64,9 +64,7 @@ def search_trajectory():
     # Increased time span for high pi cases
     T_span = np.linspace(0, 100000000, 10000)
 
-    # 1. Outer Loop: Scan Velocities
-    # We scan from 0 down to near the limit -sqrt(6) ~ -2.449
-    # Use log spacing near the limit? Or just fine linear.
+
     pi_scan = np.linspace(-0.1, -2.4, 30)
     
     results = []
@@ -82,7 +80,7 @@ def search_trajectory():
             return N - 60.0
             
         try:
-            # We assume phi is in [5.0, 30.0]. 
+           
             # High Pi requires larger phi to compensate and get same N.
             res = root_scalar(objective, bracket=[5.0, 30.0], method='brentq')
             
@@ -92,7 +90,7 @@ def search_trajectory():
                 # Measure properties
                 N_final, eta_min = get_N_total(phi_sol, pi_target, model, T_span, return_details=True)
                 
-                print(f"  [FOUND] Pi={pi_target:.3f} -> Phi={phi_sol:.5f} | N={N_final:.2f}, EtaMin={eta_min:.4f}")
+                print(f"  [] Pi={pi_target:.3f} -> Phi={phi_sol:.5f} | N={N_final:.2f}, EtaMin={eta_min:.4f}")
                 results.append({
                     'pi': pi_target,
                     'phi': phi_sol,
@@ -100,11 +98,10 @@ def search_trajectory():
                     'eta_min': eta_min
                 })
             else:
-                print(f"  [FAIL] Pi={pi_target:.3f} (Convergence failed)")
+                print(f"  [FALLO] Pi={pi_target:.3f} (Convergence failed)")
                 
         except Exception as e:
-            # Likely bracket error if solution moves out of range
-            print(f"  [FAIL] Pi={pi_target:.3f} (Bracket error: {str(e)[:50]}...)")
+            print(f"  [FALLO] Pi={pi_target:.3f} (Bracket error: {str(e)[:50]}...)")
 
     if not results:
         print("No valid trajectories found.")
@@ -114,11 +111,10 @@ def search_trajectory():
     pis = [r['pi'] for r in results]
     etas = [r['eta_min'] for r in results]
     
-    # Find best USR candidate (minimum eta)
     best_idx = np.argmin(etas)
     best = results[best_idx]
     
-    print("\n=== SEARCH RESULTS ===")
+    print("\n=== Resultados ===")
     print(f"Best USR Candidate:")
     print(f"  Initial Pi  = {best['pi']:.6f}")
     print(f"  Initial Phi = {best['phi']:.6f}")
