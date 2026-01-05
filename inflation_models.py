@@ -26,11 +26,11 @@ class InflationModel:
         raise NotImplementedError
 
     def dfdx(self, x):
-        """First derivative of potential wrt x"""
+        """First derivative of potential  x"""
         raise NotImplementedError
 
     def d2fdx2(self, x):
-        """Second derivative of potential wrt x"""
+        """Second derivative of potential  x"""
         raise NotImplementedError
 
     def get_initial_conditions(self):
@@ -59,11 +59,15 @@ class QuadraticModel(InflationModel):
     def d2fdx2(self, x):
         return 2
 
-
 class HiggsModel(InflationModel):
-    def __init__(self):
+
+    def __init__(self, lam=0.1, xi=1000.0):
         super().__init__("Higgs Inflation")
         self.alpha = np.sqrt(2/3)
+        self.lam = lam
+        self.xi_val = xi
+   
+        self.v0 = self.lam / (4 * self.xi_val**2)
 
     def f(self, x):
         return (1 - np.exp(-self.alpha * x))**2
@@ -88,11 +92,7 @@ class NonMinimalQuarticModel(InflationModel):
         self.lam = lam
         self.v0 = self.lam / 4.0
         
-        # Setup Field Interpolation (Einstein Frame phi <-> Jordan Frame psi)
-        # Solve d(psi)/d(phi) = F(psi) to get psi(phi)
-        # We need a range of phi. 0 to 100 Planck masses is plenty for inflation.
-        # Note: x in code is phi/Mp.
-        
+
         self.phi_max = 100.0
         self.phi_grid = np.linspace(0, self.phi_max, 1000)
         
