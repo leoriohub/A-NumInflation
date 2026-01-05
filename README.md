@@ -1,10 +1,9 @@
+# A-NumInflation
 
----
----
+**Fork of [NumDynInflation](https://github.com/bhattsiddharth/NumDynInflation)**
 
-# Numerical simulation of inflationary dynamics: slow-roll and beyond
+This repository is a fork of the original code for "Numerical simulation of inflationary dynamics: slow-roll and beyond". It includes improvements for project organization, version control cleanliness, and additional utilities for exploring Ultra-Slow-Roll (USR) dynamics and Non-Minimal Coupling (NMC) scenarios.
 
----
 ---
 
 This code is intended to be used as per the procedure detailed in the [article](https://arxiv.org/abs/2212.00529) on arXiv. 
