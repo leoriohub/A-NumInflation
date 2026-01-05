@@ -64,8 +64,6 @@ class HiggsModel(InflationModel):
     def __init__(self):
         super().__init__("Higgs Inflation")
         self.alpha = np.sqrt(2/3)
-        self.v0 = (1.5e-5)**2
-        self.xi = 5.5 # Approx 60 e-folds
 
     def f(self, x):
         return (1 - np.exp(-self.alpha * x))**2
