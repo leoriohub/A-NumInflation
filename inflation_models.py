@@ -70,13 +70,13 @@ class HiggsModel(InflationModel):
         self.v0 = self.lam / (4 * self.xi_val**2)
 
     def f(self, x):
-        return (1 - np.exp(-self.alpha * x))**2
+        return self.v0 * (1 - np.exp(-self.alpha * x))**2
 
     def dfdx(self, x):
-        return 2 * self.alpha * np.exp(-self.alpha * x) * (1 - np.exp(-self.alpha * x))
+        return 2 * self.alpha * self.v0 * np.exp(-self.alpha * x) * (1 - np.exp(-self.alpha * x))
 
     def d2fdx2(self, x):
-        return 2 * self.alpha**2 * np.exp(-self.alpha * x) * (2 * np.exp(-self.alpha * x) - 1)
+        return 2 * self.alpha**2 * self.v0 * np.exp(-self.alpha * x) * (2 * np.exp(-self.alpha * x) - 1)
 
 
 class NonMinimalQuarticModel(InflationModel):
