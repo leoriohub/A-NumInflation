@@ -22,7 +22,7 @@ def run_background_simulation(model, T_span):
     """
     Solves the background inflationary equations for a given model.
     """
-    xi, yi, zi, Ni = model.get_initial_conditions()
+    phi0, yi, zi, Ni = model.get_initial_conditions()
     v0 = model.v0
     S = model.S
 
@@ -35,7 +35,7 @@ def run_background_simulation(model, T_span):
         return [dxdT, dydT, dzdT, dndT]
 
     # Using tighter tolerances for general stability
-    sol = odeint(sys, [xi, yi, zi, Ni], T_span, rtol=1e-10, atol=1e-12, mxstep=1000000)
+    sol = odeint(sys, [phi0, yi, zi, Ni], T_span, rtol=1e-10, atol=1e-12, mxstep=1000000)
     return np.transpose(sol)
 
 def get_derived_quantities(sol_data, model):

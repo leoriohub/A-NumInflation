@@ -17,7 +17,7 @@ class InflationModel:
         self.name = name
         self.S = S
         self.v0 = None # Potential scale, to be defined in subclasses
-        self.xi = None
+        self.phi0 = None
         self.yi = 0.0
         self.Ai = 1e-5
 
@@ -34,13 +34,13 @@ class InflationModel:
         raise NotImplementedError
 
     def get_initial_conditions(self):
-        """Returns [xi, yi, zi, Ai]"""
+        """Returns [phi0, yi, zi, Ai]"""
         # zi depends on potential, calculating here ensures consistency
-        zi = np.sqrt(self.yi**2/6 + (self.v0 * self.f(self.xi) / (3 * self.S**2)))
+        zi = np.sqrt(self.yi**2/6 + (self.v0 * self.f(self.phi0) / (3 * self.S**2)))
         # Return Ni (log scale factor) instead of Ai
         # Default Ai was 1e-5. Ni = ln(1e-5) approx -11.51
         Ni = np.log(self.Ai)
-        return [self.xi, self.yi, zi, Ni]
+        return [self.phi0, self.yi, zi, Ni]
 
 
 class QuadraticModel(InflationModel):
@@ -48,7 +48,7 @@ class QuadraticModel(InflationModel):
         super().__init__("Quadratic Inflation")
         M = 5.9e-6
         self.v0 = 0.5 * M**2
-        self.xi = 17.5 # Approx 60 e-folds
+        self.phi0 = 17.5 # Approx 60 e-folds
 
     def f(self, x):
         return x**2
@@ -130,9 +130,9 @@ class NonMinimalQuarticModel(InflationModel):
         # For large xi, phi ~ sqrt(6) ln(...) ~ 5.5 like Higgs
         # For small xi, phi ~ 15 like Quadratic
         if self.xi_val > 1:
-            self.xi = 5.5
+            self.phi0 = 5.5
         else:
-            self.xi = 15.0
+            self.phi0 = 15.0
 
     def _get_psi(self, x):
         # Handle scalar or array
