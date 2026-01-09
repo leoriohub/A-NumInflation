@@ -18,7 +18,7 @@ class InflationModel:
         self.S = S
         self.v0 = None # Potential scale, to be defined in subclasses
         self.phi0 = None
-        self.yi = 0.0
+        self.yi = None
         self.Ai = 1e-5
 
     def f(self, x):
@@ -68,6 +68,10 @@ class HiggsModel(InflationModel):
         self.xi_val = xi
    
         self.v0 = self.lam / (4 * self.xi_val**2)
+        
+        # Default Initial Conditions (USR Exploration Defaults)
+        self.phi0 = 5.8
+        self.yi = -0.01
 
     def f(self, x):
         return (1 - np.exp(-self.alpha * x))**2
