@@ -83,11 +83,12 @@ def d2fdx2(x):
 
 
 
-def run_ms_simulation(model, T_span, k):
+# def run_ms_simulation(model, T_span, k):  <-- Original Signature
+def run_ms_simulation(xi, yi, zi, Ai, T_span, k, model):
     """
     Solves the Mukhanov-Sasaki equations for scalar and tensor fluctuations.
     """
-    xi, yi, zi, Ai = model.get_initial_conditions()
+    # xi, yi, zi, Ai = model.get_initial_conditions()  <-- Original IC loading
     v0 = model.v0
     S = model.S
     
