@@ -2,11 +2,9 @@
 
 **Fork of [NumDynInflation](https://github.com/bhattsiddharth/NumDynInflation)**
 
-This repository is a fork of the original code for "Numerical simulation of inflationary dynamics: slow-roll and beyond". It includes improvements for project organization, version control cleanliness, and additional utilities for exploring Ultra-Slow-Roll (USR) dynamics and Non-Minimal Coupling (NMC) scenarios.
+This repository is a fork of the original code for "Numerical simulation of inflationary dynamics: slow-roll and beyond". It Additional utilities for exploring Ultra-Slow-Roll (USR) dynamics and Non-Minimal Coupling (NMC) on Higgs Inflation scenarios.
 
 ---
-
-This code is intended to be used as per the procedure detailed in the [article](https://arxiv.org/abs/2212.00529) on arXiv. 
 
 The codes given are tested using Ubuntu 20.04 and the following softwares/packages are required:  
 Python 3.10+  
@@ -47,12 +45,6 @@ ex: *quad_dyn_background.py* or *Starobinsky_MS_data_60.0.txt*
 This code is meant to be pedagogical in nature. In the process of fixing the various parameters, entering suitable initial conditions, etc the user will get a clear understanding of inflationary dynamics. We are developing a much more modular and direct PYTHON package akin to a black box which would allow users to compute specific aspects and predictions of inflationary models without having to traverse through all the dynamics manually. Updates regarding the same will be posted here as and when progress is made.
 
 
-Thank you for taking interest in our work!
-
-For any queries, please contact:  
-bhattsid24@gmail.com
-or
-swagatam18@gmail.com
 
 ## Copyright information
 Numerical simulations of inflationary dynamics: slow roll and beyond © 2022 by Siddharth Bhatt, Swagat Mishra, Soumen Basak and Surya Sahoo is licensed under Creative Commons Attribution 4.0 International 
