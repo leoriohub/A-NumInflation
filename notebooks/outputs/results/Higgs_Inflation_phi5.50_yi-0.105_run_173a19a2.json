@@ -1,0 +1,51 @@
+{
+    "metadata": {
+        "run_id": "173a19a2",
+        "timestamp": "2026-03-23T01:03:05.777852",
+        "description": "Batch automated calculation of ns and r from exact MS equations."
+    },
+    "model_parameters": {
+        "name": "Higgs Inflation",
+        "xi": 1000,
+        "lambda": 0.13,
+        "phi0": 5.5,
+        "yi": -0.10526315789473685,
+        "S": 5e-05
+    },
+    "numerical_settings": {
+        "delta_finite_difference": 1e-05,
+        "k_start_factor": 100.0
+    },
+    "background_info": {
+        "total_efolds": 63.46963934918889,
+        "exit_N_simulation": 3.0868076024059583
+    },
+    "observables": {
+        "n_s": 0.9813881053088486,
+        "r": 0.0029732283376599513,
+        "n_s_SR": 0.9684681963753329,
+        "r_SR": 0.003045574544709799,
+        "P_S_pivot": 7.22392244236296e-07,
+        "P_T_pivot": 2.147837091469124e-09
+    },
+    "spectrum_scan": [
+        {
+            "label": "k_minus",
+            "k_code": 0.0004506289136686963,
+            "P_S": 7.22392367971795e-07,
+            "P_T": 2.1478369106798006e-09
+        },
+        {
+            "label": "k_pivot",
+            "k_code": 0.0004506334200028963,
+            "P_S": 7.22392244236296e-07,
+            "P_T": 2.147837091469124e-09
+        },
+        {
+            "label": "k_plus",
+            "k_code": 0.0004506379263370964,
+            "P_S": 7.223920990700306e-07,
+            "P_T": 2.147837273050594e-09
+        }
+    ]
+}
