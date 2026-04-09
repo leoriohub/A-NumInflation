@@ -18,7 +18,7 @@ from typing import Dict, Any, List
 import inf_dyn_background as bg_solver
 import inf_dyn_MS_full as ms_solver
 
-def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N_star: float = 60.0, output_dir: str = "outputs/results", T_span_bg: np.ndarray = None) -> Dict[str, Any]:
+def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N_star: float = 60.0, output_dir: str = "outputs/results", T_span_bg: np.ndarray = None, save_to_file: bool = True) -> Dict[str, Any]:
     """
     Runs the full simulation workflow for a given model and initial conditions.
     1. Solves the background evolution.
@@ -117,7 +117,10 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
     r_val = results[1][1] / results[1][0]
     
     # 7. Save results using standard JSON utility
-    output_path = save_results_to_json(model, ns, r_val, ns_SR, r_SR, delta, k_pivot_code, N_total, N_efolds[pivot_idx], results, ks_code_list, output_dir)
+    if save_to_file:
+        output_path = save_results_to_json(model, ns, r_val, ns_SR, r_SR, delta, k_pivot_code, N_total, N_efolds[pivot_idx], results, ks_code_list, output_dir)
+    else:
+        output_path = None
     
     return {
         "status": "success",
