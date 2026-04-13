@@ -9,8 +9,7 @@ __pycache__/
 # Data and Outputs
 data/*
 !data/.gitkeep
-outputs/*
-!outputs/.gitkeep
+outputs/results
 
 # OS generated files
 .DS_Store
