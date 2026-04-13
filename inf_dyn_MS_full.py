@@ -185,12 +185,17 @@ if __name__ == "__main__":
         # Initial conditions for this mode
         xi_ms = data[i_idx(Nk+5), 3]
         yi_ms = data[i_idx(Nk+5), 4]
-        zi_ms = np.sqrt(yi_ms**2/6 + (v0*f(xi_ms)/(3*S**2)))
-        Ai_ms = 1e-3 * np.exp(77.4859 - (Nk+5))
+        from inflation_models import QuadraticModel
+        
+        # Instantiate real OOP model for stand-alone test
+        test_model = QuadraticModel()
+        
+        zi_ms = np.sqrt(yi_ms**2/6 + (test_model.v0*test_model.f(xi_ms)/(3*test_model.S**2)))
+        ni_ms = np.log(1e-3) + 77.4859 - (Nk+5)
         
         T_span = np.linspace(0, 200, 10000)
-        sol_data = run_ms_simulation(xi_ms, yi_ms, zi_ms, Ai_ms, T_span, k_val, v0, S)
-        derived = get_ms_derived_quantities(sol_data, k_val, S)
+        sol_data = run_ms_simulation(xi_ms, yi_ms, zi_ms, ni_ms, T_span, k_val, test_model)
+        derived = get_ms_derived_quantities(sol_data, test_model, k_val, ni_ms)
         
         plt.plot(derived['aHk'], derived['P_S'], 'r')
         plt.xscale('log')
