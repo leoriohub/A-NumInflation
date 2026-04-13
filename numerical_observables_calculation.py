@@ -97,7 +97,7 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
         xi = bg_sol[0][start_idx]
         yi_val = bg_sol[1][start_idx]
         zi = bg_sol[2][start_idx]
-        Ai = np.exp(bg_sol[3][start_idx])
+        ni = bg_sol[3][start_idx]
         
         # Time span for this mode
         t_start = T_span_bg[start_idx]
@@ -105,8 +105,8 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
         T_ms = np.linspace(t_start, t_end, 5000)
         
         # Solve MS
-        ms_sol = ms_solver.run_ms_simulation(xi, yi_val, zi, Ai, T_ms, k_code, model)
-        derived = ms_solver.get_ms_derived_quantities(ms_sol, model, k_code)
+        ms_sol = ms_solver.run_ms_simulation(xi, yi_val, zi, ni, T_ms, k_code, model)
+        derived = ms_solver.get_ms_derived_quantities(ms_sol, model, k_code, ni)
         results.append((derived['P_S'][-1], derived['P_T'][-1]))
     
     # 6. Calculate Observables

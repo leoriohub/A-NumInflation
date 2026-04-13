@@ -84,71 +84,89 @@ def d2fdx2(x):
 
 
 # def run_ms_simulation(model, T_span, k):  <-- Original Signature
-def run_ms_simulation(xi, yi, zi, Ai, T_span, k, model):
+def run_ms_simulation(xi, yi, zi, ni, T_span, k, model):
     """
     Solves the Mukhanov-Sasaki equations for scalar and tensor fluctuations.
     """
-    # xi, yi, zi, Ai = model.get_initial_conditions()  <-- Original IC loading
     v0 = model.v0
     S = model.S
     
-    # Calculate initial conditions at correct scale if needed (omitted for brevity, assuming bunch-davies)
-    # Re-using previous logic but generalized
-    vi = (1/np.sqrt(2*k))
-    ui = 0
-    v_Ti = 0
-    u_Ti = -k*(1/np.sqrt(2*k))/Ai
-    hi = (1/np.sqrt(2*k))
-    gi = 0
-    h_Ti = 0
-    g_Ti = -k*(1/np.sqrt(2*k))/Ai
+    # Scale everything to a relative scale factor A_rel where A_rel(start) = 1.
+    # This prevents e^(-1000) underflow or e^1000 overflow when N_total > 300.
+    k_rel = k * np.exp(-ni)
+    
+    # y = a*H/k = A_rel*H/k_rel
+    # At start A_rel = 1, so y = zi/k_rel
+    y = zi / k_rel
+    
+    # Exact complex phase correction for being at finite time
+    vi = (1/np.sqrt(2*k_rel))
+    ui = y * vi
+    
+    # Exact physical time derivatives (converted from conformal tau)
+    v_Ti = k_rel / np.sqrt(2*k_rel) * y
+    u_Ti = -k_rel / np.sqrt(2*k_rel) * (1 - y**2)
+    
+    # Tensors share identical vacuum physics
+    hi = vi
+    gi = ui
+    h_Ti = v_Ti
+    g_Ti = u_Ti
 
     def sys(var, T):
-        [x, y, z, A, v, v_T, u, u_T, h, h_T, g, g_T] = var
+        [x, y_idx, z, n_rel, v, v_T, u, u_T, h, h_T, g, g_T] = var
         # background
-        dxdT = y
-        dydT = -3*z*y - v0*model.dfdx(x)/S**2 
-        dzdT = -0.5*y**2
-        dAdT = A*z
+        dxdT = y_idx
+        dydT = -3*z*y_idx - v0*model.dfdx(x)/S**2 
+        dzdT = -0.5*y_idx**2
+        dndT = z
+        
+        # safe evaluation of k/a to avoid overflow
+        k2_invA2 = k_rel**2 * np.exp(-2*n_rel)
 
         # scalar fluctuations
         dvdT = v_T
-        dv_TdT = -z*v_T + v*(2.5*y**2 + 2*y*(-3*z*y - v0*model.dfdx(x)/S**2 )/z + 2*z**2 + 0.5*y**4/z**2 - v0*model.d2fdx2(x)/S**2 - k**2/A**2)
+        dv_TdT = -z*v_T + v*(2.5*y_idx**2 + 2*y_idx*(-3*z*y_idx - v0*model.dfdx(x)/S**2 )/z + 2*z**2 + 0.5*y_idx**4/z**2 - v0*model.d2fdx2(x)/S**2 - k2_invA2)
         dudT = u_T
-        du_TdT = -z*u_T + u*(2.5*y**2 + 2*y*(-3*z*y - v0*model.dfdx(x)/S**2 )/z + 2*z**2 + 0.5*y**4/z**2 - v0*model.d2fdx2(x)/S**2 - k**2/A**2)
+        du_TdT = -z*u_T + u*(2.5*y_idx**2 + 2*y_idx*(-3*z*y_idx - v0*model.dfdx(x)/S**2 )/z + 2*z**2 + 0.5*y_idx**4/z**2 - v0*model.d2fdx2(x)/S**2 - k2_invA2)
         
         # tensor fluctuations
         dhdT = h_T
-        dh_TdT = -z*h_T - h*(k**2/A**2 - 2*z**2 + 0.5*y**2)
+        dh_TdT = -z*h_T - h*(k2_invA2 - 2*z**2 + 0.5*y_idx**2)
         dgdT = g_T
-        dg_TdT = -z*g_T - g*(k**2/A**2 - 2*z**2 + 0.5*y**2)
+        dg_TdT = -z*g_T - g*(k2_invA2 - 2*z**2 + 0.5*y_idx**2)
 
-        return [dxdT, dydT, dzdT, dAdT, dvdT, dv_TdT, dudT, du_TdT, dhdT, dh_TdT, dgdT, dg_TdT]
+        return [dxdT, dydT, dzdT, dndT, dvdT, dv_TdT, dudT, du_TdT, dhdT, dh_TdT, dgdT, dg_TdT]
 
-    sol = odeint(sys, [xi,yi,zi,Ai,vi,v_Ti,ui,u_Ti,hi,h_Ti,gi,g_Ti], T_span, rtol=1e-10, atol=1e-12, mxstep=1000000)
+    # Initialize n_rel = 0
+    sol = odeint(sys, [xi,yi,zi,0.0,vi,v_Ti,ui,u_Ti,hi,h_Ti,gi,g_Ti], T_span, rtol=1e-12, atol=1e-14, mxstep=5000000)
     return np.transpose(sol)
 
-def get_ms_derived_quantities(sol_data, model, k):
+def get_ms_derived_quantities(sol_data, model, k, ni):
     """
     Calculates power spectra for the simulated mode.
+    Note: k passed here must be k_code, ni scales it to k_rel matching A_rel variables!
     """
-    x, y, z, A, v, v_T, u, u_T, h, h_T, g, g_T = sol_data
+    x, y_idx, z, n_rel, v, v_T, u, u_T, h, h_T, g, g_T = sol_data
     v0 = model.v0
     S = model.S
     
+    k_rel = k * np.exp(-ni)
+    
     with np.errstate(divide='ignore', invalid='ignore'):
-        epsH = -(-z**2 + ((v0*model.f(x)/S**2 - y**2))/3)/z**2
+        epsH = -(-z**2 + ((v0*model.f(x)/S**2 - y_idx**2))/3)/z**2
         
-        # Power spectra
-        zeta2 = (v**2 + u**2)/(2*epsH*(A/S)**2)
-        P_S = (k**3 * zeta2)/(2*np.pi**2)
-        h2 = (h**2 + g**2)/((A/S)**2)
-        P_T = 4*(k**3 * h2)/(np.pi**2)
+        # Power spectra using relative k and A
+        inv_A2 = np.exp(-2*n_rel)
+        zeta2 = (v**2 + u**2) * inv_A2 * (S**2) / (2*epsH)
+        P_S = (k_rel**3 * zeta2)/(2*np.pi**2)
+        h2 = (h**2 + g**2) * inv_A2 * (S**2)
+        P_T = 4*(k_rel**3 * h2)/(np.pi**2)
     
     return {
         'P_S': P_S,
         'P_T': P_T,
-        'aHk': (A*z)/k
+        'aHk': np.exp(n_rel)*z/k_rel
     }
 
 # execution block
