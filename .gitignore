@@ -24,3 +24,5 @@ Thumbs.db
 
 paper/*
 !paper/.gitkeep
+
+inf_dyn_MS_old.py
