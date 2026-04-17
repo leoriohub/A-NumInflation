@@ -18,3 +18,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+
+# Paper
+
+paper/*
+!paper/.gitkeep
