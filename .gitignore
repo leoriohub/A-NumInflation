@@ -25,4 +25,7 @@ Thumbs.db
 paper/*
 !paper/.gitkeep
 
+SR-USR-SR_Transition/*
+!SR-USR-SR_Transition/.gitkeep
+
 inf_dyn_MS_old.py
