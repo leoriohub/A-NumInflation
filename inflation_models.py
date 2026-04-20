@@ -349,7 +349,7 @@ class SmoothUSRTransitionModel(InflationModel):
         from scipy.interpolate import CubicSpline
         
         self.v0 = H0**2
-        self.S = 5e-5 # Time unit scale
+        self.S = 5e-5 
         
         N_vals_sr = np.linspace(-35.0, 0, 2000, endpoint=False)
         N_vals_usr = np.linspace(0, 15, 1500)
@@ -382,13 +382,12 @@ class SmoothUSRTransitionModel(InflationModel):
         Z_scaled = B1_prime * W_val + B2_prime * M_val
         eps1_usr = eps_sr1 * np.exp(-2*N_vals_usr) * (Z_scaled)**2
         
-        # Stitch arrays
         N_vals = np.concatenate((N_vals_sr, N_vals_usr))
         eps1_vals = np.concatenate((np.full_like(N_vals_sr, eps_sr1), eps1_usr))
         
-        # dphi/dN = sqrt(2 * eps1)
         dphi_dN = np.sqrt(2 * eps1_vals)
         int_dphi = cumulative_trapezoid(dphi_dN, x=N_vals, initial=0.0)
+
         # We want phi to increase with N and be zero at N=0
         idx_N0 = np.argmin(np.abs(N_vals - 0.0))
         phi_vals = int_dphi - int_dphi[idx_N0]
@@ -398,7 +397,6 @@ class SmoothUSRTransitionModel(InflationModel):
         int_eps1 = int_eps1 - int_eps1[idx_N0]
         H_vals = H0 * np.exp(-int_eps1)
 
-        # Now scale the potential with the exact H(N)
         V_vals = H_vals**2 * (3 - eps1_vals) 
 
         self.N_grid = N_vals
@@ -421,12 +419,11 @@ class SmoothUSRTransitionModel(InflationModel):
         idx_i = np.argmin(np.abs(N_vals - (-15.0)))
         self.phi0 = phi_vals[idx_i]
         
-        # Initial velocity proxy: yi = dx/dT = dphi/dN * z (since dN/dT = z approx H/S)
         H0_val = np.sqrt(self.v0)
         self.yi = dphi_dN[idx_i] * (H0_val / self.S)
     
     def f(self, x):
-        return self.v_spline(x) # Let CubicSpline handle any out-of-bounds extrapolation
+        return self.v_spline(x) 
 
     def dfdx(self, x):
         x_safe = np.maximum(0, x)
