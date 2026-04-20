@@ -389,10 +389,9 @@ class SmoothUSRTransitionModel(InflationModel):
         # dphi/dN = sqrt(2 * eps1)
         dphi_dN = np.sqrt(2 * eps1_vals)
         int_dphi = cumulative_trapezoid(dphi_dN, x=N_vals, initial=0.0)
-        
-        # Let's define field such that phi is large at early times (N=-4) and 0 at late times (N=15)
-        # That means it rolls towards the origin x=0.
-        phi_vals = int_dphi[-1] - int_dphi
+        # We want phi to increase with N and be zero at N=0
+        idx_N0 = np.argmin(np.abs(N_vals - 0.0))
+        phi_vals = int_dphi - int_dphi[idx_N0]
         
         # Calculate exact H(N) instead of assuming H = H0
         int_eps1 = cumulative_trapezoid(eps1_vals, x=N_vals, initial=0.0)
@@ -402,13 +401,9 @@ class SmoothUSRTransitionModel(InflationModel):
         V_vals = H_vals**2 * (3 - eps1_vals) 
 
         # Interp functions need strictly increasing x.
-        # Reverse arrays because phi_vals is monotonically decreasing.
-        phi_rev = phi_vals[::-1]
-        V_rev = V_vals[::-1]
-        
         # Remove any non-strictly increasing points (eps1 = 0)
-        phi_uniq, uniq_idx = np.unique(phi_rev, return_index=True)
-        V_uniq = V_rev[uniq_idx]
+        phi_uniq, uniq_idx = np.unique(phi_vals, return_index=True)
+        V_uniq = V_vals[uniq_idx]
         
         self.phi_grid = phi_uniq
         self.V_grid = V_uniq
@@ -422,11 +417,9 @@ class SmoothUSRTransitionModel(InflationModel):
         idx_i = np.argmin(np.abs(N_vals - (-2)))
         self.phi0 = phi_vals[idx_i]
         
-        # Initial velocity proxy: yi = dx/dT = - dphi/dN * z (since dN/dT = z approx H/S)
-        # In inf_dyn_background.py implicit zi roughly H/S
-        # dphi/dT = (dphi/dN) * (dN/dT) = dphi/dN * z  => yi approx -dphi/dN * H0/S
+        # Initial velocity proxy: yi = dx/dT = dphi/dN * z (since dN/dT = z approx H/S)
         H0_val = np.sqrt(self.v0)
-        self.yi = -dphi_dN[idx_i] * (H0_val / self.S)
+        self.yi = dphi_dN[idx_i] * (H0_val / self.S)
     
     def f(self, x):
         return self.v_spline(x) # Let CubicSpline handle any out-of-bounds extrapolation
