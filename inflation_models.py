@@ -334,3 +334,107 @@ class FullHiggsModel(InflationModel):
         d2f_dpsi2 = 2 * (dg_dpsi**2 + g * d2g_dpsi2)
         
         return d2f_dpsi2 * (dpsi**2) + (2 * g * dg_dpsi) * d2psi
+
+
+class SmoothUSRTransitionModel(InflationModel):
+    """
+    Numerically reconstructed potential from the analytical smooth SR-USR-SR model.
+    Based on arXiv:2603.17465v1
+    """
+    def __init__(self, alpha=22.63, mu=2.0294, eps_sr1=1e-6, H0=1.0):
+        super().__init__(f"Smooth USR (alpha={alpha}, mu={mu})")
+        
+        from scipy.special import hyperu, hyp1f1
+        from scipy.integrate import cumulative_trapezoid
+        from scipy.interpolate import CubicSpline
+        
+        self.v0 = H0**2
+        self.S = 5e-5 # Time unit scale
+        
+        N_vals_sr = np.linspace(-4, 0, 500, endpoint=False)
+        N_vals_usr = np.linspace(0, 15, 1500)
+        
+        q_sq = 9/4 + alpha - mu**2
+        q = np.sqrt(q_sq)
+        
+        def W(kappa, mu_val, z):
+            return np.exp(-z/2) * (z**(mu_val + 0.5)) * hyperu(0.5 + mu_val - kappa, 1 + 2*mu_val, z)
+            
+        def M(kappa, mu_val, z):
+            return np.exp(-z/2) * (z**(mu_val + 0.5)) * hyp1f1(0.5 + mu_val - kappa, 1 + 2*mu_val, z)
+            
+        k0 = alpha / (2*q)
+        k1 = k0 + 1
+        
+        W0 = W(k0, mu, 2*q)
+        M0 = M(k0, mu, 2*q)
+        W1 = W(k1, mu, 2*q)
+        M1 = M(k1, mu, 2*q)
+        
+        denom = (alpha + q + 2*mu*q)*M1*W0 + 2*q*M0*W1
+        B1_prime = ((alpha - 2*q - 2*q**2)*M0 - (alpha + q + 2*mu*q)*M1) / denom
+        B2_prime = -((alpha - 2*q - 2*q**2)*W0 + 2*q*W1) / denom
+        
+        z_arg = 2 * q * np.exp(-N_vals_usr)
+        W_val = W(k0, mu, z_arg)
+        M_val = M(k0, mu, z_arg)
+        
+        Z_scaled = B1_prime * W_val + B2_prime * M_val
+        eps1_usr = eps_sr1 * np.exp(-2*N_vals_usr) * (Z_scaled)**2
+        
+        # Stitch arrays
+        N_vals = np.concatenate((N_vals_sr, N_vals_usr))
+        eps1_vals = np.concatenate((np.full_like(N_vals_sr, eps_sr1), eps1_usr))
+        
+        # dphi/dN = sqrt(2 * eps1)
+        dphi_dN = np.sqrt(2 * eps1_vals)
+        int_dphi = cumulative_trapezoid(dphi_dN, x=N_vals, initial=0.0)
+        
+        # Let's define field such that phi is large at early times (N=-4) and 0 at late times (N=15)
+        # That means it rolls towards the origin x=0.
+        phi_vals = int_dphi[-1] - int_dphi
+        
+        # Calculate exact H(N) instead of assuming H = H0
+        int_eps1 = cumulative_trapezoid(eps1_vals, x=N_vals, initial=0.0)
+        H_vals = H0 * np.exp(-int_eps1)
+
+        # Now scale the potential with the exact H(N)
+        V_vals = H_vals**2 * (3 - eps1_vals) 
+
+        # Interp functions need strictly increasing x.
+        # Reverse arrays because phi_vals is monotonically decreasing.
+        phi_rev = phi_vals[::-1]
+        V_rev = V_vals[::-1]
+        
+        # Remove any non-strictly increasing points (eps1 = 0)
+        phi_uniq, uniq_idx = np.unique(phi_rev, return_index=True)
+        V_uniq = V_rev[uniq_idx]
+        
+        self.phi_grid = phi_uniq
+        self.V_grid = V_uniq
+        
+        self.v_spline = CubicSpline(self.phi_grid, self.V_grid)
+        self.dv_spline = self.v_spline.derivative(nu=1)
+        self.d2v_spline = self.v_spline.derivative(nu=2)
+        
+        # Set initial conditions for integration appropriately
+        # Suppose we want to start 2 efolds before transition (N=-2).
+        idx_i = np.argmin(np.abs(N_vals - (-2)))
+        self.phi0 = phi_vals[idx_i]
+        
+        # Initial velocity proxy: yi = dx/dT = - dphi/dN * z (since dN/dT = z approx H/S)
+        # In inf_dyn_background.py implicit zi roughly H/S
+        # dphi/dT = (dphi/dN) * (dN/dT) = dphi/dN * z  => yi approx -dphi/dN * H0/S
+        H0_val = np.sqrt(self.v0)
+        self.yi = -dphi_dN[idx_i] * (H0_val / self.S)
+    
+    def f(self, x):
+        return self.v_spline(x) # Let CubicSpline handle any out-of-bounds extrapolation
+
+    def dfdx(self, x):
+        x_safe = np.maximum(0, x)
+        return self.dv_spline(x_safe)
+
+    def d2fdx2(self, x):
+        x_safe = np.maximum(0, x)
+        return self.d2v_spline(x_safe)
