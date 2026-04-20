@@ -28,4 +28,5 @@ paper/*
 SR-USR-SR_Transition/*
 !SR-USR-SR_Transition/.gitkeep
 
+analytical_verification.nb.txt
 inf_dyn_MS_old.py
