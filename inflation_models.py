@@ -351,7 +351,7 @@ class SmoothUSRTransitionModel(InflationModel):
         self.v0 = H0**2
         self.S = 5e-5 # Time unit scale
         
-        N_vals_sr = np.linspace(-4, 0, 500, endpoint=False)
+        N_vals_sr = np.linspace(-35.0, 0, 2000, endpoint=False)
         N_vals_usr = np.linspace(0, 15, 1500)
         
         q_sq = 9/4 + alpha - mu**2
@@ -393,12 +393,16 @@ class SmoothUSRTransitionModel(InflationModel):
         idx_N0 = np.argmin(np.abs(N_vals - 0.0))
         phi_vals = int_dphi - int_dphi[idx_N0]
         
-        # Calculate exact H(N) instead of assuming H = H0
+        # Calculate exact H(N) anchored at N=0 so H(tau_*) = H0
         int_eps1 = cumulative_trapezoid(eps1_vals, x=N_vals, initial=0.0)
+        int_eps1 = int_eps1 - int_eps1[idx_N0]
         H_vals = H0 * np.exp(-int_eps1)
 
         # Now scale the potential with the exact H(N)
         V_vals = H_vals**2 * (3 - eps1_vals) 
+
+        self.N_grid = N_vals
+        self.eps1_grid = eps1_vals
 
         # Interp functions need strictly increasing x.
         # Remove any non-strictly increasing points (eps1 = 0)
@@ -414,7 +418,7 @@ class SmoothUSRTransitionModel(InflationModel):
         
         # Set initial conditions for integration appropriately
         # Suppose we want to start 2 efolds before transition (N=-2).
-        idx_i = np.argmin(np.abs(N_vals - (-2)))
+        idx_i = np.argmin(np.abs(N_vals - (-15.0)))
         self.phi0 = phi_vals[idx_i]
         
         # Initial velocity proxy: yi = dx/dT = dphi/dN * z (since dN/dT = z approx H/S)
@@ -431,3 +435,7 @@ class SmoothUSRTransitionModel(InflationModel):
     def d2fdx2(self, x):
         x_safe = np.maximum(0, x)
         return self.d2v_spline(x_safe)
+
+    def get_initial_conditions(self):
+        zi = np.sqrt(self.yi**2/6 + self.f(self.phi0)/(3*self.S**2))
+        return self.phi0, self.yi, zi, -15.0
