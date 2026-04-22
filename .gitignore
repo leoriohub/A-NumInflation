@@ -28,6 +28,8 @@ paper/*
 SR-USR-SR_Transition/*
 !SR-USR-SR_Transition/.gitkeep
 
-analytical_verification.nb.txt
+# Archive of intermediate/exploration steps
+archive/
+
 inf_dyn_MS_old.py
 notebooks/educational_scaling.ipynb

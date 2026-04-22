@@ -344,10 +344,14 @@ class SmoothUSRTransitionModel(InflationModel):
     def __init__(self, alpha=22.63, mu=2.0294, eps_sr1=1e-6, H0=1.0):
         super().__init__(f"Smooth USR (alpha={alpha}, mu={mu})")
         
-        from scipy.special import hyperu, hyp1f1
+        from scipy.special import hyperu, hyp1f1, gamma
         from scipy.integrate import cumulative_trapezoid
         from scipy.interpolate import CubicSpline
         
+        self.alpha = alpha
+        self.mu = mu
+        self.eps_sr1 = eps_sr1
+        self.H0 = H0
         self.v0 = H0**2
         self.S = 5e-5 
         
@@ -355,7 +359,9 @@ class SmoothUSRTransitionModel(InflationModel):
         N_vals_usr = np.linspace(0, 15, 1500)
         
         q_sq = 9/4 + alpha - mu**2
-        q = np.sqrt(q_sq)
+        self.q_sq = q_sq
+        self.q = np.sqrt(q_sq)
+        q = self.q
         
         def W(kappa, mu_val, z):
             return np.exp(-z/2) * (z**(mu_val + 0.5)) * hyperu(0.5 + mu_val - kappa, 1 + 2*mu_val, z)
@@ -430,6 +436,57 @@ class SmoothUSRTransitionModel(InflationModel):
 
     def d2fdx2(self, x):
         return self.d2v_spline(x) / self.v0
+
+    def _laguerre_non_integer(self, n, b, z):
+        """Generalized Laguerre Poly for non-integer n using 1F1."""
+        from scipy.special import gamma, hyp1f1
+        # L_n^b(z) = Gamma(n+b+1)/(Gamma(n+1)*Gamma(b+1)) * 1F1(-n, b+1, z)
+        denom = (gamma(n + 1) * gamma(b + 1))
+        # Safely handle zero/tiny values in denominator
+        if np.any(np.abs(denom) < 1e-300):
+            denom = denom + 1e-300
+        coeff = gamma(n + b + 1) / denom
+        return coeff * hyp1f1(-n, b + 1, z)
+
+    def _get_G_functions(self, N):
+        """Implements G1-G4 from Appendix A of arXiv:2603.17465."""
+        from scipy.special import hyperu
+        z = 2 * self.q * np.exp(-N)
+        
+        # Hypergeometric arguments based on paper mapping
+        arg_u1 = 0.5 - (self.alpha / (2 * self.q)) + self.mu
+        arg_u2 = 1.5 - (self.alpha / (2 * self.q)) + self.mu
+        
+        # G1 (Eq A2)
+        term1 = (np.exp(N) * (3 + 2 * self.mu) - 2 * self.q) * hyperu(arg_u1, 1 + 2 * self.mu, z)
+        term2 = 2 * (self.alpha - self.q - 2 * self.q * self.mu) * hyperu(arg_u2, 2 + 2 * self.mu, z)
+        G1 = term1 + term2
+        
+        # G2 (Eq A3)
+        n1 = self.alpha / (2 * self.q) - self.mu - 1.5
+        n2 = self.alpha / (2 * self.q) - self.mu - 0.5
+        G2 = 4 * self.q * self._laguerre_non_integer(n1, 1 + 2 * self.mu, z) - \
+             (np.exp(N) * (2 * self.mu + 3) - 2 * self.q) * self._laguerre_non_integer(n2, 2 * self.mu, z)
+        
+        # G3 (Eq A4)
+        G3 = hyperu(arg_u1, 1 + 2 * self.mu, z)
+        
+        # G4 (Eq A5)
+        n3 = self.alpha / (2 * self.q) - 0.5 - self.mu
+        G4 = self._laguerre_non_integer(n3, 2 * self.mu, z)
+        
+        return G1, G2, G3, G4
+
+    def epsilon2_analytical(self, N):
+        """Exact epsilon2 solution from Eq A1."""
+        G1, G2, G3, G4 = self._get_G_functions(N)
+        # G(0) are the functions evaluated at transition point N=0 (tau=tau*)
+        G1_0, G2_0, G3_0, G4_0 = self._get_G_functions(0.0)
+        
+        num = G1_0 * G2 - G2_0 * G1
+        den = G1_0 * G4 + G2_0 * G3
+        
+        return np.exp(-N) * (num / den)
 
     def get_initial_conditions(self):
         # Multiply f by v0 since the potential function is now dimensionless
