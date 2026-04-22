@@ -82,17 +82,6 @@ def get_derived_quantities(sol_data, model):
         'Pt': Pt,
         'n': n # Return log scale factor
     }
-    
-    return {
-        'N': N,
-        'epsH': epsH,
-        'etaH': etaH,
-        'ns': ns,
-        'r': r,
-        'Ps': Ps,
-        'Pt': Pt,
-        'aH': aH
-    }
 
 # execution block
 if __name__ == "__main__":
