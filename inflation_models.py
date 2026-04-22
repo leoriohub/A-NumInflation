@@ -423,16 +423,15 @@ class SmoothUSRTransitionModel(InflationModel):
         self.yi = dphi_dN[idx_i] * (H0_val / self.S)
     
     def f(self, x):
-        return self.v_spline(x) 
+        return self.v_spline(x) / self.v0
 
     def dfdx(self, x):
-        x_safe = np.maximum(0, x)
-        return self.dv_spline(x_safe)
+        return self.dv_spline(x) / self.v0
 
     def d2fdx2(self, x):
-        x_safe = np.maximum(0, x)
-        return self.d2v_spline(x_safe)
+        return self.d2v_spline(x) / self.v0
 
     def get_initial_conditions(self):
-        zi = np.sqrt(self.yi**2/6 + self.f(self.phi0)/(3*self.S**2))
+        # Multiply f by v0 since the potential function is now dimensionless
+        zi = np.sqrt(self.yi**2/6 + (self.v0 * self.f(self.phi0))/(3*self.S**2))
         return self.phi0, self.yi, zi, -15.0
