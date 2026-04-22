@@ -2,6 +2,7 @@
 # Python
 __pycache__/
 *.pyc
+venv/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/

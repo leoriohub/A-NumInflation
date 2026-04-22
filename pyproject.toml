@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "A-NumInflation"
+version = "1.0.0"
+description = "Numerical pipeline for exact inflationary dynamics and cosmological observables."
+authors = [
+    {name = "Diego", email = "diego.navia@postgrado.uv.cl"}
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "matplotlib>=3.4.0",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0"
+]
+readme = "README.md"
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/leoriohub/A-NumInflation"
