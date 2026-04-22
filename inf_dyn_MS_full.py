@@ -189,7 +189,7 @@ if __name__ == "__main__":
         # Initial conditions for this mode
         xi_ms = data[i_idx(Nk+5), 3]
         yi_ms = data[i_idx(Nk+5), 4]
-        from inflation_models import QuadraticModel
+        from models import QuadraticModel
         
         # Instantiate real OOP model for stand-alone test
         test_model = QuadraticModel()

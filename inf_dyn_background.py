@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 # The model of inflation is defined in this section
 #########################################################################################################
 
-from inflation_models import QuadraticModel
+from models import QuadraticModel
 
 def run_background_simulation(model, T_span):
     """
