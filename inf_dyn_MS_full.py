@@ -86,7 +86,11 @@ def d2fdx2(x):
 # def run_ms_simulation(model, T_span, k):  <-- Original Signature
 def run_ms_simulation(xi, yi, zi, ni, T_span, k, model):
     """
-    Solves the Mukhanov-Sasaki equations for scalar and tensor fluctuations.
+    Integrates the full Mukhanov-Sasaki equations for a specific comoving k-mode.
+    
+    To avoid floating-point overflow during long integrations, both the scale factor 
+    and the k-mode are defined relative to the integration start time. 
+    Exact finite-time Bunch-Davies initial conditions are applied to avoid numerical artifacts.
     """
     v0 = model.v0
     S = model.S

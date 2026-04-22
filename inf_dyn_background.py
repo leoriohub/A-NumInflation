@@ -20,7 +20,10 @@ from inflation_models import QuadraticModel
 
 def run_background_simulation(model, T_span):
     """
-    Solves the background inflationary equations for a given model.
+    Integrates the background field equations (phi, phi_dot, H) over physical time T.
+    
+    The system maps the specific potential geometry V(phi) into the
+    exact dynamic background evaluation, avoiding analytical slow-roll approximations.
     """
     phi0, yi, zi, Ni = model.get_initial_conditions()
     v0 = model.v0
@@ -40,7 +43,8 @@ def run_background_simulation(model, T_span):
 
 def get_derived_quantities(sol_data, model):
     """
-    Calculates physical quantities from simulation results.
+    Extracts physical observables and slow-roll parameters from the exact background integration.
+    Computes epsH and etaH dynamically to accurately track transient non-slow-roll phases (like USR).
     """
     x, y, z, n = sol_data
     v0 = model.v0

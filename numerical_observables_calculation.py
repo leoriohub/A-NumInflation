@@ -20,18 +20,18 @@ import inf_dyn_MS_full as ms_solver
 
 def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N_star: float = 60.0, output_dir: str = "outputs/results", T_span_bg: np.ndarray = None, save_to_file: bool = True) -> Dict[str, Any]:
     """
-    Runs the full simulation workflow for a given model and initial conditions.
-    1. Solves the background evolution.
-    2. Identifies the pivot scale exactly N_star e-folds before the end.
-    3. Solves the Mukhanov-Sasaki equations for k_pivot and its neighbors.
-    4. Calculates ns and r using the finite difference method.
-    5. Saves the full metadata to a JSON file.
+    Coordinates the calculation of cosmological observables by mapping them from the end of inflation.
+    
+    By evolving the background to find the exact moment when inflation ends (epsH = 1), 
+    we trace back N_star e-folds to anchor our pivot scale (k_pivot). We then integrate the Mukhanov-Sasaki 
+    perturbation equations across a narrow band around k_pivot, allowing us to capture any 
+    transient non-slow-roll dynamics when computing the spectral index (n_s) and tensor-to-scalar ratio (r).
     """
-    # 1. Setup Model
+    # Anchor the specified initial conditions to the model instance.
     model.phi0 = phi0
     model.yi = yi
     
-    # 2. Run Background Simulation
+    # Evolve the background fields to capture the full dynamic trajectory.
     if T_span_bg is None:
         T_span_bg = np.linspace(0, 5000, 10000)
         
@@ -39,7 +39,7 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
     derived_bg = bg_solver.get_derived_quantities(bg_sol, model)
 
 
-    # 3. Find End of Inflation (epsH = 1)
+    # Identify the exact end of inflation (where the slow-roll parameter epsH crosses 1).
     epsH = derived_bg['epsH']
     N_efolds = derived_bg['N']
     
@@ -62,7 +62,7 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
     
     N_total = N_efolds[end_idx]
 
-    # 4. Identify Pivot Scale (N_star e-folds before end)
+    # Map the pivot scale by rewinding exactly N_star e-folds from the end of inflation.
     # Check if we have enough inflation e-folds for N_star
     if N_total < N_star:
         return {"status": "error", "message": f"Total inflation ({N_total:.2f}) is less than N_star ({N_star})"}
@@ -78,7 +78,8 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
     ns_SR = derived_bg['ns'][pivot_idx]
     r_SR = derived_bg['r'][pivot_idx]
     
-    # 5. Core Perturbation Calculation (For 3 modes to find the slope)
+    # Evaluate the exact Mukhanov-Sasaki perturbations. 
+    # We compute the power spectrum for k_pivot and its immediate neighbors to compute the precise spectral slope.
     # Using the corrected naming and delta logic
     ks_code_list = [k_pivot_code * (1 - delta), k_pivot_code, k_pivot_code * (1 + delta)]
     results = []
@@ -109,14 +110,14 @@ def run_inflation_protocol(model, phi0: float, yi: float, delta: float = 1e-4, N
         derived = ms_solver.get_ms_derived_quantities(ms_sol, model, k_code, ni)
         results.append((derived['P_S'][-1], derived['P_T'][-1]))
     
-    # 6. Calculate Observables
+    # Compute the final observables using a finite difference method across our narrow k-band.
     log_k = np.log(ks_code_list)
     log_Ps = np.log([res[0] for res in results])
     slope = (log_Ps[2] - log_Ps[0]) / (log_k[2] - log_k[0])
     ns = 1 + slope
     r_val = results[1][1] / results[1][0]
     
-    # 7. Save results using standard JSON utility
+    # Persist the configuration and generated observables for downstream analysis.
     if save_to_file:
         output_path = save_results_to_json(model, ns, r_val, ns_SR, r_SR, delta, k_pivot_code, N_total, N_efolds[pivot_idx], results, ks_code_list, output_dir)
     else:
