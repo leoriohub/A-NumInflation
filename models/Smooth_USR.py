@@ -20,9 +20,9 @@ class SmoothUSRTransitionModel(InflationModel):
         self.v0 = H0**2
         self.S = 5e-5 
         
-        # Reduced grid density for significantly faster initialization
-        N_vals_sr = np.linspace(-35.0, 0, 500, endpoint=False)
-        N_vals_usr = np.linspace(0, 15, 500)
+        # Restore original high grid density for exact numerical precision
+        N_vals_sr = np.linspace(-35.0, 0, 2000, endpoint=False)
+        N_vals_usr = np.linspace(0, 15, 1500)
         
         q_sq = 9/4 + alpha - mu**2
         self.q_sq = q_sq
