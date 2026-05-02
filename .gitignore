@@ -10,7 +10,8 @@ venv/
 # Data and Outputs
 data/*
 !data/.gitkeep
-outputs/results
+outputs/*
+!outputs/.gitkeep
 
 # OS generated files
 .DS_Store
