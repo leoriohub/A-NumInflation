@@ -6,6 +6,61 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from scipy.interpolate import make_interp_spline
 
+def load_grid_search(path: str) -> tuple:
+    """Load a single grid_search JSON and return (metadata_dict, results_df).
+
+    The results DataFrame contains all grid points including errors.
+    Use filter_successful / filter_errors to separate.
+    """
+    with open(path, 'r') as f:
+        data = json.load(f)
+    df = pd.DataFrame(data["results"])
+    if "phi0" in df.columns:
+        df["phi0"] = pd.to_numeric(df["phi0"], errors="coerce")
+    return data, df
+
+
+def filter_successful(df: pd.DataFrame) -> pd.DataFrame:
+    """Return only rows with status='success'."""
+    return df[df["status"] == "success"].copy()
+
+
+def filter_errors(df: pd.DataFrame) -> pd.DataFrame:
+    """Return only rows with status='error'."""
+    return df[df["status"] == "error"].copy()
+
+
+def sweep_summary(grid_data: dict, results_df: pd.DataFrame) -> None:
+    """Print a text summary of a completed sweep."""
+    mg = grid_data["grid_parameters"]
+    mp = grid_data["model_parameters"]
+    successes = filter_successful(results_df)
+    errors = filter_errors(results_df)
+
+    print(f"Model:  {grid_data['model_parameters'].get('name', '?')}")
+    xi = mp.get("xi", "?")
+    lam = mp.get("lam", "?")
+    print(f"Params: xi={xi}, lambda={lam}")
+    print(f"Grid:   phi0 ∈ [{mg['phi0_min']}, {mg['phi0_max']}] × {mg['phi0_steps']} steps, "
+          f"yi ∈ {mg.get('yi_values', '?')}")
+    print(f"Run:    {mg['total_configurations_attempted']} points → "
+          f"{len(successes)} ok, {len(errors)} errors")
+
+    if not successes.empty:
+        print(f"\nn_s range:      [{successes['ns'].min():.4f}, "
+              f"{successes['ns'].max():.4f}]")
+        print(f"r range:        [{successes['r'].min():.6f}, "
+              f"{successes['r'].max():.6f}]")
+        print(f"N_total range:  [{successes['N_total'].min():.1f}, "
+              f"{successes['N_total'].max():.1f}]")
+
+    if not errors.empty:
+        print(f"\nFirst few errors:")
+        for _, row in errors.head(5).iterrows():
+            msg = str(row.get("message", ""))[:80]
+            print(f"  phi0={row['phi0']:.4f} yi={row['yi']:.4f}: {msg}")
+
+
 def scan_simulations(directory="../outputs"):
     """Scans the output directory and returns a sorted metadata dataframe."""
     sims = []
