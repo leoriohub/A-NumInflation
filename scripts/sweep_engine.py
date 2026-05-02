@@ -216,7 +216,8 @@ def run_parameter_sweep(
 def _print_progress(i: int, total: int, r: dict, phi0: float, yi: float):
     if r["status"] == "success":
         print(f"  [{i}/{total}] phi0={phi0:.4f} yi={yi:.4f} -> "
-              f"ns={r['ns']:.4f} r={r['r']:.6f}  N={r['N_total']:.1f}")
+              f"ns={r['ns']:.4f} ns_SR={r['ns_SR']:.4f} "
+              f"r={r['r']:.6f} P={r['P_S']:.2e}  N={r['N_total']:.1f}")
     else:
         msg = r.get("message", "")[:80]
         print(f"  [{i}/{total}] phi0={phi0:.4f} yi={yi:.4f} -> ERROR: {msg}")

@@ -3,24 +3,20 @@
 
 Usage examples:
 
-  # Single yi, phi0 sweep
+  # Minimal — uses default ranges (phi0=[5.4,5.8] (200) x yi=[-0.2,-0.001] (50))
+  python scripts/sweep.py \
+    --model HiggsModel --xi 15000 --lambda 0.13 --n-workers 8
+
+  # Custom ranges
   python scripts/sweep.py \
     --model HiggsModel --xi 17000 --lambda 0.13 \
     --phi0-min 5.4 --phi0-max 5.7 --phi0-steps 260 \
-    --yi -0.06 --delta 1e-5 --n-workers 4 --output-dir outputs
-
-  # Multiple yi values, NMC quartic model
-  python scripts/sweep.py \
-    --model NonMinimalQuarticModel --xi 100 --lambda 0.01 \
-    --phi0-min 4.0 --phi0-max 8.0 --phi0-steps 200 \
-    --yi -0.1 -0.05 0.0 0.05 0.1 \
-    --n-workers 8
+    --yi -0.06 --n-workers 4
 
   # Resume an interrupted run
   python scripts/sweep.py \
     --model HiggsModel --xi 17000 --lambda 0.13 \
-    --phi0-min 5.4 --phi0-max 5.7 --phi0-steps 260 \
-    --yi -0.06 --output outputs/grid_search_...json --resume
+    --output outputs/grid_search_...json --resume
 
   # Custom integration time span
   python scripts/sweep.py \
@@ -60,17 +56,20 @@ def parse_args(argv=None):
     g_model.add_argument("--S", type=float, default=None, help="Model parameter S")
 
     g_grid = parser.add_argument_group("Grid parameters")
-    g_grid.add_argument("--phi0-min", type=float, required=True)
-    g_grid.add_argument("--phi0-max", type=float, required=True)
-    g_grid.add_argument("--phi0-steps", type=int, required=True)
+    g_grid.add_argument("--phi0-min", type=float, default=5.4,
+                        help="phi0 range minimum (default: 5.4)")
+    g_grid.add_argument("--phi0-max", type=float, default=5.8,
+                        help="phi0 range maximum (default: 5.8)")
+    g_grid.add_argument("--phi0-steps", type=int, default=200,
+                        help="phi0 range number of steps (default: 200)")
     g_grid.add_argument("--yi", type=float, nargs="+", default=None,
                         help="Specific yi value(s) — use nargs='+' syntax")
-    g_grid.add_argument("--yi-min", type=float, default=None,
-                        help="Alternative: yi range minimum")
-    g_grid.add_argument("--yi-max", type=float, default=None,
-                        help="Alternative: yi range maximum")
-    g_grid.add_argument("--yi-steps", type=int, default=None,
-                        help="Alternative: yi range number of steps")
+    g_grid.add_argument("--yi-min", type=float, default=-0.2,
+                        help="yi range minimum (default: -0.2)")
+    g_grid.add_argument("--yi-max", type=float, default=-0.001,
+                        help="yi range maximum (default: -0.001)")
+    g_grid.add_argument("--yi-steps", type=int, default=50,
+                        help="yi range number of steps (default: 50)")
 
     g_num = parser.add_argument_group("Numerical settings")
     g_num.add_argument("--delta", type=float, default=1e-4,
@@ -96,16 +95,10 @@ def parse_args(argv=None):
 
     args = parser.parse_args(argv)
 
-    # Resolve yi
-    if args.yi is not None and args.yi_min is not None:
-        parser.error("Provide either --yi (list) or --yi-min/--yi-max/--yi-steps (range), not both")
-    if args.yi is None and args.yi_min is None:
-        parser.error("Provide either --yi (list of values) or --yi-min with --yi-max and --yi-steps")
+    # Resolve yi: use --yi (list) if given, else fall back to range defaults
     if args.yi is not None:
         yi_values = args.yi
     else:
-        if args.yi_max is None or args.yi_steps is None:
-            parser.error("--yi-max and --yi-steps required when using --yi-min")
         yi_values = np.linspace(args.yi_min, args.yi_max, args.yi_steps).tolist()
 
     # Build model kwargs from provided args
