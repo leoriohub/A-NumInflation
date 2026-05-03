@@ -37,3 +37,6 @@ inf_dyn_MS_old.py
 notebooks/educational_scaling.ipynb
 
 .opencode/
+
+docs/
+!docs/.gitkeep
